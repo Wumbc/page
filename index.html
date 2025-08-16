@@ -6,45 +6,49 @@
 <title>Wumbc</title>
 <style>
 html,body{
-  height:100%;margin:0;
+  height:100%;
+  margin:0;
   font-family:'Segoe UI',sans-serif;
-  overflow:hidden;color:white;
-  background:black; /* Start with black background */
+  overflow:hidden;
+  color:white;
+  background:black; /* Black screen before video fades in */
 }
 body{position:relative;}
 
 .background-video{
   position:fixed;top:0;left:0;width:100%;height:100%;
   object-fit:cover;
-  opacity:0; transition:opacity 2s ease; z-index:-1;
+  opacity:0;
+  transition:opacity 2s ease;
+  z-index:-1;
 }
 .background-video.show{opacity:1;}
 
 .overlay{
   position:absolute;top:0;left:0;width:100%;height:100%;
   background:rgba(0,0,0,0.2);
-  opacity:0;transition:opacity 2s;
+  opacity:0;
+  transition:opacity 2s;
 }
 .overlay.show{opacity:1;}
 
 .email{
   position:fixed;top:20px;right:20px;
-  font-size:1rem;opacity:0.6;
-  text-decoration:none;color:white;
-  transition:opacity 0.3s;z-index:2;
+  font-size:1rem;opacity:0.6;text-decoration:none;color:white;
+  transition:opacity 0.3s;
+  z-index:2;
 }
 .email:hover{opacity:1;}
 
 .volume-container{
-  position:fixed;top:20px;left:20px;
-  z-index:2; display:none; /* hidden until Enter */
-}
-.volume-box{
-  background:rgba(0,0,0,0.5);
+  position:fixed;top:20px;left:20px;z-index:2;
+  background:rgba(0,0,0,0.6);
   padding:8px 12px;
   border-radius:8px;
-  box-shadow:0 0 8px rgba(0,0,0,0.4);
+  display:none; /* hidden until Enter is clicked */
 }
+.volume-container.show{display:block;}
+
 input[type=range]{
   width:120px;
 }
@@ -53,17 +57,20 @@ input[type=range]{
   display:flex;justify-content:center;align-items:center;
   height:100%;position:relative;z-index:1;
 }
-
 #enter-btn{
   padding:0.8rem 2rem;font-size:1.2rem;
   background:rgba(255,255,255,0.2);
   border:none;color:white;cursor:pointer;
-  border-radius:5px;transition:background 0.3s;
+  border-radius:5px;
+  transition:background 0.3s;
 }
 #enter-btn:hover{background:rgba(255,255,255,0.4);}
-
 .fade-in{animation:fadeIn 2s ease forwards;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(20px);}
+  to{opacity:1;transform:translateY(0);}
+}
 
 @media(max-width:600px){
   #enter-btn{font-size:1rem;padding:0.6rem 1.5rem;}
@@ -83,9 +90,7 @@ input[type=range]{
 <a href="mailto:me@wumbc.com" class="email">me@wumbc.com</a>
 
 <div class="volume-container" id="volume-container">
-  <div class="volume-box">
-    <input type="range" id="volume-slider" min="0" max="100" value="50">
-  </div>
+  <input type="range" id="volume-slider" min="0" max="100" value="50">
 </div>
 
 <div class="content">
@@ -116,8 +121,8 @@ enterBtn.addEventListener('click', ()=>{
   overlay.classList.add('show');          // fade in overlay
   backgroundVideo.play();                 // start video
   player.playVideo();                     // start hidden audio
-  enterBtn.style.display='none';
-  volumeContainer.style.display='block';  // show volume slider
+  enterBtn.style.display='none';          // hide button
+  volumeContainer.classList.add('show');  // show volume slider box
 });
 
 // Volume control for YouTube audio
