@@ -1,136 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Wumbc</title>
 <style>
-html,body{
-  height:100%;
-  margin:0;
-  font-family:'Segoe UI',sans-serif;
-  overflow:hidden;
-  color:white;
-  background:black; /* Black screen before video fades in */
-}
-body{position:relative;}
+  /* Base */
+  html, body {
+    height: 100%;
+    margin: 0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    color: #fff;
+    background: #000; /* true black start */
+    overflow: hidden;
+  }
 
-.background-video{
-  position:fixed;top:0;left:0;width:100%;height:100%;
-  object-fit:cover;
-  opacity:0;
-  transition:opacity 2s ease;
-  z-index:-1;
-}
-.background-video.show{opacity:1;}
+  /* Background video */
+  #bg {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: 0;               /* hidden until Enter */
+    transition: opacity 1.8s ease;
+    z-index: 0;               /* keep at/above page, NOT -1 */
+  }
+  #bg.show { opacity: 1; }
 
-.overlay{
-  position:absolute;top:0;left:0;width:100%;height:100%;
-  background:rgba(0,0,0,0.2);
-  opacity:0;
-  transition:opacity 2s;
-}
-.overlay.show{opacity:1;}
+  /* Darken for readability after reveal */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.25);
+    opacity: 0;
+    transition: opacity 1.8s ease;
+    z-index: 1;
+  }
+  .overlay.show { opacity: 1; }
 
-.email{
-  position:fixed;top:20px;right:20px;
-  font-size:1rem;opacity:0.6;text-decoration:none;color:white;
-  transition:opacity 0.3s;
-  z-index:2;
-}
-.email:hover{opacity:1;}
+  /* Gate (initial black screen with button) */
+  .gate {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #000;         /* guarantees black start */
+    z-index: 5;
+    transition: opacity 0.6s ease;
+  }
+  .gate.hide { opacity: 0; pointer-events: none; }
 
-.volume-container{
-  position:fixed;top:20px;left:20px;z-index:2;
-  background:rgba(0,0,0,0.6);
-  padding:8px 12px;
-  border-radius:8px;
-  display:none; /* hidden until Enter is clicked */
-}
-.volume-container.show{display:block;}
+  #enter {
+    padding: .9rem 2rem; font-size: 1.1rem;
+    color: #fff; background: rgba(255,255,255,.14);
+    border: none; border-radius: 10px; cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: background .25s ease, transform .08s ease;
+  }
+  #enter:hover { background: rgba(255,255,255,.26); }
+  #enter:active { transform: scale(0.98); }
 
-input[type=range]{
-  width:120px;
-}
+  /* Email (stays visible as before) */
+  .email {
+    position: fixed; top: 18px; right: 18px;
+    font-size: 0.95rem; opacity: .6; z-index: 3;
+    text-decoration: none; color: #fff; transition: opacity .25s ease;
+  }
+  .email:hover { opacity: 1; }
 
-.content{
-  display:flex;justify-content:center;align-items:center;
-  height:100%;position:relative;z-index:1;
-}
-#enter-btn{
-  padding:0.8rem 2rem;font-size:1.2rem;
-  background:rgba(255,255,255,0.2);
-  border:none;color:white;cursor:pointer;
-  border-radius:5px;
-  transition:background 0.3s;
-}
-#enter-btn:hover{background:rgba(255,255,255,0.4);}
-.fade-in{animation:fadeIn 2s ease forwards;}
+  /* Volume UI (hidden until Enter) */
+  .vol {
+    position: fixed; top: 18px; left: 18px; z-index: 3;
+    display: none;
+  }
+  .vol.show { display: block; }
+  .vol .card {
+    background: rgba(0,0,0,.55);
+    padding: 10px 12px; border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.35);
+    backdrop-filter: blur(6px);
+  }
+  .vol input[type="range"] { width: 140px; }
 
-@keyframes fadeIn{
-  from{opacity:0;transform:translateY(20px);}
-  to{opacity:1;transform:translateY(0);}
-}
-
-@media(max-width:600px){
-  #enter-btn{font-size:1rem;padding:0.6rem 1.5rem;}
-}
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    #bg, .overlay, .gate { transition: none; }
+  }
 </style>
 </head>
 <body>
 
-<!-- Background Video -->
-<video id="background-video" class="background-video" loop muted playsinline>
-  <source src="background.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+  <!-- Background video (muted visual only) -->
+  <video id="bg" preload="auto" loop muted playsinline>
+    <source src="background.mp4" type="video/mp4" />
+  </video>
 
-<div class="overlay" id="overlay"></div>
+  <!-- Subtle dark overlay after reveal -->
+  <div class="overlay" id="overlay"></div>
 
-<a href="mailto:me@wumbc.com" class="email">me@wumbc.com</a>
+  <!-- Email (keep subtle, always visible) -->
+  <a class="email" href="mailto:me@wumbc.com">me@wumbc.com</a>
 
-<div class="volume-container" id="volume-container">
-  <input type="range" id="volume-slider" min="0" max="100" value="50">
-</div>
+  <!-- Volume (appears after Enter) -->
+  <div class="vol" id="vol">
+    <div class="card">
+      <input id="volSlider" type="range" min="0" max="100" value="50" />
+    </div>
+  </div>
 
-<div class="content">
-  <button id="enter-btn" class="fade-in">Enter Site</button>
-</div>
+  <!-- Gate (initial screen) -->
+  <div class="gate" id="gate">
+    <button id="enter">Enter Site</button>
+  </div>
 
-<!-- Hidden YouTube audio -->
-<div id="yt-audio" style="display:none;"></div>
+  <!-- Hidden YouTube audio -->
+  <div id="yt-audio" style="width:0;height:0;overflow:hidden;"></div>
 
-<script src="https://www.youtube.com/iframe_api"></script>
-<script>
-let player;
-function onYouTubeIframeAPIReady(){
-  player = new YT.Player('yt-audio',{
-    height:'0', width:'0', videoId:'6jfKibAmR1M',
-    playerVars:{autoplay:0,controls:0,loop:1,playlist:'6jfKibAmR1M',modestbranding:1,mute:0}
-  });
-}
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script>
+    let player, wantPlay = false;
 
-const enterBtn = document.getElementById('enter-btn');
-const backgroundVideo = document.getElementById('background-video');
-const overlay = document.getElementById('overlay');
-const volumeSlider = document.getElementById('volume-slider');
-const volumeContainer = document.getElementById('volume-container');
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('yt-audio', {
+        height: '0', width: '0',
+        videoId: '6jfKibAmR1M',
+        playerVars: {
+          autoplay: 0, controls: 0, loop: 1, playlist: '6jfKibAmR1M',
+          modestbranding: 1, mute: 0
+        },
+        events: {
+          'onReady': () => { if (wantPlay) safePlayAudio(); }
+        }
+      });
+    }
 
-enterBtn.addEventListener('click', ()=>{
-  backgroundVideo.classList.add('show');  // fade in video
-  overlay.classList.add('show');          // fade in overlay
-  backgroundVideo.play();                 // start video
-  player.playVideo();                     // start hidden audio
-  enterBtn.style.display='none';          // hide button
-  volumeContainer.classList.add('show');  // show volume slider box
-});
+    const gate = document.getElementById('gate');
+    const enter = document.getElementById('enter');
+    const bg = document.getElementById('bg');
+    const overlay = document.getElementById('overlay');
+    const vol = document.getElementById('vol');
+    const volSlider = document.getElementById('volSlider');
 
-// Volume control for YouTube audio
-volumeSlider.addEventListener('input', ()=>{
-  const vol = parseInt(volumeSlider.value);
-  if(player) player.setVolume(vol);
-});
-</script>
+    // Start experience
+    enter.addEventListener('click', async () => {
+      // Reveal visuals
+      bg.classList.add('show');
+      overlay.classList.add('show');
+      gate.classList.add('hide');
 
+      // Start background video (muted so autoplay is allowed everywhere)
+      try { await bg.play(); } catch(e) { /* ignore */ }
+
+      // Start YouTube audio (may be ready slightly later)
+      if (player && player.playVideo) {
+        safePlayAudio();
+      } else {
+        wantPlay = true; // play when onReady fires
+      }
+
+      // Show volume UI
+      vol.classList.add('show');
+    });
+
+    // Volume controls YouTube audio
+    volSlider.addEventListener('input', () => {
+      const v = parseInt(volSlider.value, 10);
+      if (player && player.setVolume) player.setVolume(v);
+    });
+
+    function safePlayAudio() {
+      // Set initial volume to match slider, then play
+      try { player.setVolume(parseInt(volSlider.value, 10)); } catch(e) {}
+      try { player.playVideo(); } catch(e) {}
+    }
+  </script>
 </body>
 </html>
